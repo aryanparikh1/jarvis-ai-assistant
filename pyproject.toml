@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "jarvis-ai-assistant"
+version = "1.0.0"
+description = "Jarvis — Production-Ready AI Desktop Assistant for Windows"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Aryan Parikh", email = "aryanparikh415@gmail.com" }]
+keywords = ["ai", "assistant", "jarvis", "desktop", "automation"]
+
+[project.scripts]
+jarvis = "main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["jarvis*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

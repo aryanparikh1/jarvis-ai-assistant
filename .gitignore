@@ -1,0 +1,70 @@
+# Jarvis AI Assistant — .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.env
+.venv/
+
+# Secrets / API keys
+config/secrets.json
+*.key
+.env.local
+
+# Runtime data
+data/
+logs/
+*.db
+*.sqlite
+*.sqlite3
+
+# ChromaDB
+chroma/
+*.chroma/
+
+# Whisper model cache
+~/.cache/huggingface/
+models/
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# IDE
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Assets (keep icons, exclude large binaries)
+assets/sounds/*.mp3
+assets/images/generated/
+
+# Temp
+*.tmp
+*.temp
+tmp/
+temp/
