@@ -23,7 +23,13 @@ class SchedulerAgent(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._scheduler = BackgroundScheduler(timezone="local")
+        try:
+            from tzlocal import get_localzone
+            tz = get_localzone()
+        except Exception:
+            import datetime
+            tz = datetime.timezone.utc
+        self._scheduler = BackgroundScheduler(timezone=tz)
         self._jobs: dict[str, dict] = {}
 
     def start(self):

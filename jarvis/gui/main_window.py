@@ -17,7 +17,7 @@ from datetime import datetime
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QLabel, QPushButton, QScrollArea, QFrame, QTextEdit,
-    QSizePolicy, QStackedWidget, QApplication, QShortcut,
+    QSizePolicy, QStackedWidget, QApplication,
     QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import (
@@ -26,7 +26,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QColor, QKeySequence, QFont, QPixmap, QPainter, QLinearGradient,
-    QTextCursor
+    QTextCursor, QShortcut
 )
 
 from jarvis.gui.orb_widget import OrbWidget, OrbState

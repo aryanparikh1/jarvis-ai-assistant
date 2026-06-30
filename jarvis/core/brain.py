@@ -141,13 +141,13 @@ class LLMBrain:
             kwargs["tools"] = self._tools
             kwargs["tool_choice"] = "auto"
 
-        async with client.beta.chat.completions.stream(**kwargs) as stream:
-            async for event in stream:
-                for choice in event.choices:
-                    delta = choice.delta
-                    if delta and delta.content:
-                        full_response += delta.content
-                        yield delta.content
+        stream = await client.chat.completions.create(**kwargs)
+        async for chunk in stream:
+            if chunk.choices:
+                delta = chunk.choices[0].delta
+                if delta and delta.content:
+                    full_response += delta.content
+                    yield delta.content
 
         self.add_message("assistant", full_response)
 
