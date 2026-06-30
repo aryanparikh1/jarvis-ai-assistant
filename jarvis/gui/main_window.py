@@ -220,6 +220,7 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._setup_shortcuts()
         self._show_welcome()
+        self._init_voice()
 
         logger.info("Main window initialized")
 
@@ -283,6 +284,12 @@ class MainWindow(QMainWindow):
         logo_text.setStyleSheet(
             "font-size: 16pt; font-weight: 900; color: #00D4FF; letter-spacing: 4px;"
         )
+        logo_shadow = QGraphicsDropShadowEffect(self)
+        logo_shadow.setBlurRadius(15)
+        logo_shadow.setColor(QColor(0, 212, 255, 180))
+        logo_shadow.setOffset(0, 0)
+        logo_text.setGraphicsEffect(logo_shadow)
+        
         logo_row.addWidget(logo_text)
         logo_row.addStretch()
         layout.addLayout(logo_row)
@@ -352,6 +359,11 @@ class MainWindow(QMainWindow):
 
         # Orb
         self.orb = OrbWidget(size=36)
+        orb_shadow = QGraphicsDropShadowEffect(self)
+        orb_shadow.setBlurRadius(15)
+        orb_shadow.setColor(QColor(0, 212, 255, 120))
+        orb_shadow.setOffset(0, 0)
+        self.orb.setGraphicsEffect(orb_shadow)
         layout.addWidget(self.orb)
 
         # Title
@@ -369,6 +381,11 @@ class MainWindow(QMainWindow):
 
         # Mic indicator
         self.mic_indicator = MicIndicator(size=36)
+        mic_shadow = QGraphicsDropShadowEffect(self)
+        mic_shadow.setBlurRadius(12)
+        mic_shadow.setColor(QColor(0, 212, 255, 80))
+        mic_shadow.setOffset(0, 0)
+        self.mic_indicator.setGraphicsEffect(mic_shadow)
         layout.addWidget(self.mic_indicator)
 
         # New chat button
@@ -409,6 +426,13 @@ class MainWindow(QMainWindow):
         self._chat_input.setPlaceholderText("Ask Jarvis anything... (Ctrl+Enter to send)")
         self._chat_input.setMaximumHeight(120)
         self._chat_input.setMinimumHeight(52)
+        
+        input_shadow = QGraphicsDropShadowEffect(self)
+        input_shadow.setBlurRadius(10)
+        input_shadow.setColor(QColor(0, 212, 255, 40))
+        input_shadow.setOffset(0, 0)
+        self._chat_input.setGraphicsEffect(input_shadow)
+        
         input_area.addWidget(self._chat_input)
 
         send_btn = QPushButton("Send")
@@ -580,6 +604,10 @@ class MainWindow(QMainWindow):
         except Exception:
             pass  # Memory system may not be initialized yet
 
+        # Trigger TTS
+        if config.get("voice_enabled", True) and hasattr(self, "_tts") and self._tts:
+            self._tts.speak(full_text)
+
     @Slot(str)
     def _on_llm_error(self, error: str):
         if self._current_assistant_bubble:
@@ -663,3 +691,90 @@ class MainWindow(QMainWindow):
         event.ignore()
         self.hide()
         logger.info("Main window hidden to tray")
+
+    # ── Voice System Integration ──────────────────────────────────────
+    def _init_voice(self):
+        try:
+            from jarvis.voice.tts import TTSEngine
+            from jarvis.voice.stt import STTEngine
+            from jarvis.voice.wake_word import WakeWordDetector
+
+            self._tts = TTSEngine()
+            self._stt = STTEngine()
+            self._ww_detector = WakeWordDetector()
+
+            # Connect STT signals
+            self._stt.transcription_ready.connect(self._on_voice_transcription)
+            self._stt.audio_level.connect(self._on_voice_audio_level)
+            self._stt.recording_started.connect(self._on_voice_recording_started)
+            self._stt.recording_stopped.connect(self._on_voice_recording_stopped)
+
+            # Connect TTS signals
+            self._tts.speaking_started.connect(self._on_tts_started)
+            self._tts.speaking_finished.connect(self._on_tts_finished)
+
+            # Connect Wake Word signals
+            self._ww_detector.detected.connect(self._on_wake_word_detected)
+
+            # Wire voice page buttons to engines
+            self._voice_panel.push_to_talk_pressed.connect(self._stt.start_recording)
+            self._voice_panel.push_to_talk_released.connect(self._stt.stop_recording_and_transcribe)
+            # Wake word toggle
+            self._voice_panel._ww_toggle.toggled.connect(self._on_ww_toggle)
+            
+            logger.info("Voice Assistant subsystems successfully initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize voice systems: {e}")
+            self._tts = None
+            self._stt = None
+            self._ww_detector = None
+
+    def _on_ww_toggle(self, enabled: bool):
+        if self._ww_detector:
+            if enabled:
+                self._ww_detector.start()
+            else:
+                self._ww_detector.stop()
+
+    def _on_wake_word_detected(self, name: str):
+        logger.info(f"Wake word '{name}' detected. Triggering STT...")
+        self.push_notification("Jarvis Activated", "Listening for your command...", "normal")
+        # Automatically start listening
+        if self._stt:
+            self._stt.start_recording()
+            # Set timer to automatically stop after 5 seconds
+            QTimer.singleShot(5000, self._stt.stop_recording_and_transcribe)
+
+    def _on_voice_transcription(self, text: str):
+        if not text:
+            self._voice_panel.set_transcript("I didn't hear anything. Try again.")
+            self.orb.set_state(OrbState.IDLE)
+            self._header_status.setText("Ready")
+            return
+        
+        self._voice_panel.set_transcript(f"Command: '{text}'")
+        self._switch_page(0) # Switch to chat page to see output
+        self._process_message(text)
+
+    def _on_voice_audio_level(self, level: float):
+        self._voice_panel.set_audio_level(level)
+
+    def _on_voice_recording_started(self):
+        self._voice_panel.set_status(OrbState.LISTENING, "Listening...")
+        self.orb.set_state(OrbState.LISTENING)
+        self.mic_indicator.set_state(MicState.SPEECH)
+
+    def _on_voice_recording_stopped(self):
+        self._voice_panel.set_status(OrbState.THINKING, "Processing speech...")
+        self.orb.set_state(OrbState.THINKING)
+        self.mic_indicator.set_state(MicState.STANDBY)
+
+    def _on_tts_started(self):
+        self.orb.set_state(OrbState.SPEAKING)
+        self._voice_panel.set_status(OrbState.SPEAKING, "Jarvis speaking...")
+        self._header_status.setText("Jarvis speaking...")
+
+    def _on_tts_finished(self):
+        self.orb.set_state(OrbState.IDLE)
+        self._voice_panel.set_status(OrbState.IDLE, "Ready")
+        self._header_status.setText("Ready")

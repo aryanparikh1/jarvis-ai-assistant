@@ -41,11 +41,24 @@ class LLMBrain:
         if self._openai_client is None:
             try:
                 import openai
-                import keyring
-                api_key = keyring.get_password("jarvis", "openai_api_key")
+                import os
+                # Try keyring first
+                api_key = None
+                try:
+                    import keyring
+                    api_key = keyring.get_password("jarvis", "openai_api_key")
+                except Exception:
+                    pass
+                # Fallback: config file
                 if not api_key:
-                    # Fall back to config
                     api_key = config.get("openai_api_key", "")
+                # Fallback: environment variable
+                if not api_key:
+                    api_key = os.environ.get("OPENAI_API_KEY", "")
+                if not api_key:
+                    raise ValueError(
+                        "No OpenAI API key found. Please add it in Settings → AI Model tab."
+                    )
                 self._openai_client = openai.AsyncOpenAI(api_key=api_key)
             except Exception as e:
                 logger.error(f"Failed to init OpenAI client: {e}")
