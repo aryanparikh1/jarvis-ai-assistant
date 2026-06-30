@@ -130,7 +130,17 @@ QPushButton#iconBtn:hover {
 }
 
 /* ── Input Fields ─────────────────────────────────────────── */
-QLineEdit, QTextEdit, QPlainTextEdit {
+QLineEdit {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #E8EAED;
+    min-height: 32px;
+    selection-background-color: rgba(0, 212, 255, 0.3);
+}
+
+QTextEdit, QPlainTextEdit {
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;

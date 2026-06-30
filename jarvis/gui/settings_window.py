@@ -128,35 +128,41 @@ class SettingsWindow(QDialog):
         self._provider_combo.currentTextChanged.connect(self._on_provider_changed)
 
         # OpenAI
+        self._openai_key_label = QLabel("OpenAI API Key:")
         self._openai_key = QLineEdit()
         self._openai_key.setEchoMode(QLineEdit.EchoMode.Password)
         self._openai_key.setPlaceholderText("sk-...")
-        form.addRow("OpenAI API Key:", self._openai_key)
+        form.addRow(self._openai_key_label, self._openai_key)
 
+        self._openai_model_label = QLabel("OpenAI Model:")
         self._openai_model = QComboBox()
         self._openai_model.addItems(["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"])
-        form.addRow("OpenAI Model:", self._openai_model)
+        form.addRow(self._openai_model_label, self._openai_model)
 
         # Gemini
+        self._gemini_key_label = QLabel("Gemini API Key:")
         self._gemini_key = QLineEdit()
         self._gemini_key.setEchoMode(QLineEdit.EchoMode.Password)
         self._gemini_key.setPlaceholderText("AIza...")
-        form.addRow("Gemini API Key:", self._gemini_key)
+        form.addRow(self._gemini_key_label, self._gemini_key)
 
+        self._gemini_model_label = QLabel("Gemini Model:")
         self._gemini_model = QComboBox()
         self._gemini_model.addItems([
             "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"
         ])
-        form.addRow("Gemini Model:", self._gemini_model)
+        form.addRow(self._gemini_model_label, self._gemini_model)
 
         # Ollama
+        self._ollama_host_label = QLabel("Ollama Host:")
         self._ollama_host = QLineEdit()
         self._ollama_host.setPlaceholderText("http://localhost:11434")
-        form.addRow("Ollama Host:", self._ollama_host)
+        form.addRow(self._ollama_host_label, self._ollama_host)
 
+        self._ollama_model_label = QLabel("Ollama Model:")
         self._ollama_model = QLineEdit()
         self._ollama_model.setPlaceholderText("llama3")
-        form.addRow("Ollama Model:", self._ollama_model)
+        form.addRow(self._ollama_model_label, self._ollama_model)
 
         layout.addWidget(provider)
 
@@ -334,6 +340,8 @@ class SettingsWindow(QDialog):
         self._api_enabled.setChecked(config.get("api_enabled", False))
         self._api_port.setValue(config.get("api_port", 8765))
 
+        self._on_provider_changed(provider)
+
     def _save(self):
         # Securely store API keys
         oai_key = self._openai_key.text().strip()
@@ -413,4 +421,21 @@ class SettingsWindow(QDialog):
                 logger.error(f"Failed to clear memories: {e}")
 
     def _on_provider_changed(self, provider: str):
-        pass  # Could show/hide relevant fields
+        openai_visible = (provider == "openai")
+        gemini_visible = (provider == "gemini")
+        ollama_visible = (provider == "ollama")
+
+        self._openai_key_label.setVisible(openai_visible)
+        self._openai_key.setVisible(openai_visible)
+        self._openai_model_label.setVisible(openai_visible)
+        self._openai_model.setVisible(openai_visible)
+
+        self._gemini_key_label.setVisible(gemini_visible)
+        self._gemini_key.setVisible(gemini_visible)
+        self._gemini_model_label.setVisible(gemini_visible)
+        self._gemini_model.setVisible(gemini_visible)
+
+        self._ollama_host_label.setVisible(ollama_visible)
+        self._ollama_host.setVisible(ollama_visible)
+        self._ollama_model_label.setVisible(ollama_visible)
+        self._ollama_model.setVisible(ollama_visible)
